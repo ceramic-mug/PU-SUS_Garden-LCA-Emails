@@ -64,14 +64,8 @@ lastDate = dates[-1]
 
 outDir = datetime.strftime(lastDate, r'%Y-%m-%d_out')
 
-#################################
-# TODO: Uncomment in final form #
-#################################
-
-# if not os.path.exists(outDir):
-#     os.makedirs(outDir)
-
-#################################
+if not os.path.exists(outDir):
+    os.makedirs(outDir)
 
 ############################################################
 
