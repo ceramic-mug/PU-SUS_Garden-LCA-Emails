@@ -87,7 +87,7 @@ statsDict = LCAutils.statsDict(dat)
 message = """\
 <html>
     <body>
-        <img src="cid:{0}" width="300px">
+        <img src="cid:{0}" width="100%">
 
         <p> Dear {1},</p>
     
@@ -101,16 +101,20 @@ message = """\
 
 # (6) Send messages
 
+# connect to the server and log in to send emails
 with smtplib.SMTP_SSL("smtp.gmail.com", port, \
                       context=context) as server:
     
     server.login(sender_email, password)
 
+    # iterate through the participants, conditionally
+    # customizing the message for each
     for i in range(len(participants)):
 
+        # name of participant
         p = participants[i]
 
-        # format some numbers
+        # conditionally format
         dWater = statsDict[p]['Dif water']
 
         if dWater > 0:
@@ -139,27 +143,48 @@ with smtplib.SMTP_SSL("smtp.gmail.com", port, \
         else:
             dW_dt_trend = 'decreasing'
 
-
-        # build the message
+        # build the email message
         msg = EmailMessage()
+
+        # Email subject
         msg['Subject'] = 'Princeton SUS Lab | Garden Life-Cycle Assesment Statistics'
+        
+        # Configure image type
         lineplot_cid = make_msgid(domain='xyz.com')
 
+        # Add participant-specific data to email
+        # [0] lineplot_cid[1:-1] is the image placeholder
+        # [1] participant name
+        # [2] change in produce yield this week
+        # [3] change in water input this week
+        # [4] total water input
+        # [5] total produce yield
+        # [6] average water input
+        # [7] linear regression increasing or decreasing
+        # [8] linear regression slope for water input
+
+        message_personalization = [
+            lineplot_cid[1:-1], # [0]
+            p, # [1]
+            dProduce, # [2]
+            dWater, # [3] 
+            '{:.1f}'.format(statsDict[p]['Total water']), # [4] 
+            '{:.1f}'.format(statsDict[p]['Total produce']), # [5] 
+            '{:.1f}'.format(statsDict[p]['Mean water']), # [6] 
+            dW_dt_trend, # [7] 
+            '{:.1f}'.format(np.abs(dW_dt)) # [8] 
+        ]
+
+        # attach the html content to the message with
+        # personalized info
         msg.add_alternative(message.format(
-            lineplot_cid[1:-1],
-            p,
-            dProduce,
-            dWater,
-            '{:.1f}'.format(statsDict[p]['Total water']),
-            '{:.1f}'.format(statsDict[p]['Total produce']),
-            '{:.1f}'.format(statsDict[p]['Mean water']),
-            dW_dt_trend,
-            '{:.1f}'.format(np.abs(dW_dt))
+            *message_personalization
         ), subtype='html')
 
+        # write to output, to know what's going on
         print('Sending email to ',p)
 
-        # Attach lineplot to email
+        # Embed lineplot to email at placeholder location
         with open(figureDict[p]['line'], 'rb') as img:
 
             # know the Content-Type of the image
@@ -171,4 +196,5 @@ with smtplib.SMTP_SSL("smtp.gmail.com", port, \
                                                 subtype=subtype, 
                                                 cid=lineplot_cid)
 
+        # send it
         server.sendmail(sender_email, emails[i],msg.as_bytes())

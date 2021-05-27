@@ -46,7 +46,7 @@ import LCAutils
 
 # (2) Get name of datafile and read data
 
-inFile = sys.argv[1]
+inFile = input('Data file name: ')
 dat = pd.read_csv(inFile)
 
 ############################################################
